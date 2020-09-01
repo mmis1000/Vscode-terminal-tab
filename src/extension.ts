@@ -59,9 +59,7 @@ export function activate(context: vscode.ExtensionContext) {
         rows: number,
         env: Record<string, string>
     ) => {
-        const shell = process.env[os.platform() === 'win32' ? 'COMSPEC' : 'SHELL'] as string;
-
-        let terminal = pty.spawn(shell, [], {
+        let terminal = pty.spawn(vscode.env.shell, [], {
             name: 'xterm-256color',
             cols,
             rows,
