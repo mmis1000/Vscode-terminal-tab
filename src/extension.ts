@@ -102,11 +102,16 @@ export function activate(context: vscode.ExtensionContext) {
 
             let con: import('node-pty').IPty | null = null;
             let exitHandler: null | import('node-pty').IDisposable = null;
+            let disposed = false;
 
             panel.webview.onDidReceiveMessage(
                 ev => {
                     switch (ev.type) {
                         case 'ready': {
+                            // killed before the launch
+                            if (disposed) {
+                                return;
+                            }
                             const res = spawnTerminal(
                                 panel,
                                 vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.env.HOME || '',
@@ -150,6 +155,7 @@ export function activate(context: vscode.ExtensionContext) {
             panel.onDidDispose(() => {
                 exitHandler?.dispose();
                 exitHandler = null;
+                disposed = true;
                 con?.kill();
             });
         })
@@ -167,11 +173,16 @@ export function activate(context: vscode.ExtensionContext) {
 
             let con: import('node-pty').IPty | null = null;
             let exitHandler: null | import('node-pty').IDisposable = null;
+            let disposed = false;
 
             panel.webview.onDidReceiveMessage(
                 ev => {
                     switch (ev.type) {
                         case 'ready': {
+                            // killed before the launch
+                            if (disposed) {
+                                return;
+                            }
                             const res = spawnTerminal(
                                 panel,
                                 state.cwd,
@@ -212,6 +223,7 @@ export function activate(context: vscode.ExtensionContext) {
             panel.onDidDispose(() => {
                 exitHandler?.dispose();
                 exitHandler = null;
+                disposed = true;
                 con?.kill();
             });
         }
