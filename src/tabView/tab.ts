@@ -16,10 +16,13 @@ declare const preloadData: any;
     const vscode = acquireVsCodeApi();
     vscode.setState(preloadData);
 
+    const foregroundColor = getCSSVariable('--vscode-terminal-foreground');
+    const backgroundColor = getCSSVariable('--vscode-terminal-background') || getCSSVariable('--vscode-panel-background')
+
     const terminal = new Terminal({
         theme: {
-            foreground: getCSSVariable('--vscode-terminal-foreground'),
-            background: getCSSVariable('--vscode-panel-background'),
+            foreground: foregroundColor,
+            background: backgroundColor,
 
             brightBlack: getCSSVariable('--vscode-terminal-ansiBrightBlack'),
             brightBlue: getCSSVariable('--vscode-terminal-ansiBrightBlue'),
@@ -39,10 +42,13 @@ declare const preloadData: any;
             white: getCSSVariable('--vscode-terminal-ansiWhite'),
             yellow: getCSSVariable('--vscode-terminal-ansiYellow'),
 
-            selection: getCSSVariable('--vscode-terminal-selectionBackground')
+            selection: getCSSVariable('--vscode-terminal-selectionBackground'),
+
+            cursor: getCSSVariable('--vscode-terminalCursor-foreground') || foregroundColor,
+            cursorAccent: getCSSVariable('--vscode-terminalCursor-foreground') || backgroundColor
         },
-        fontSize: Number(getCSSVariable('--vscode-font-size').replace('px', '')),
-        fontWeight: getCSSVariable('--vscode-font-weight') as any,
+        fontSize: Number(getCSSVariable('--vscode-editor-font-size').replace('px', '')),
+        fontWeight: getCSSVariable('--vscode-editor-font-weight') as any,
         fontFamily: getCSSVariable('--vscode-editor-font-family')
     });
     const fitAddon = new FitAddon.FitAddon();

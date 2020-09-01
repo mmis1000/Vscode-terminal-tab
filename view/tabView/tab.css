@@ -1,6 +1,7 @@
 html {
     height: 100%;
     background: --vscode-panel-background;
+    background: --vscode-terminal-background;
 }
 
 body {
@@ -12,4 +13,8 @@ body {
 
 #terminal {
     height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
