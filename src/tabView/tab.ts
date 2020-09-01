@@ -17,7 +17,7 @@ declare const preloadData: any;
     vscode.setState(preloadData);
 
     const foregroundColor = getCSSVariable('--vscode-terminal-foreground');
-    const backgroundColor = getCSSVariable('--vscode-terminal-background') || getCSSVariable('--vscode-panel-background')
+    const backgroundColor = getCSSVariable('--vscode-terminal-background') || getCSSVariable('--vscode-panel-background');
 
     const terminal = new Terminal({
         theme: {
