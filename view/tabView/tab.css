@@ -1,6 +1,6 @@
 html {
     height: 100%;
-    background: black;
+    background: --vscode-panel-background;
 }
 
 body {

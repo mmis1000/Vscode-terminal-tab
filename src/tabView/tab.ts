@@ -1,17 +1,50 @@
 // eslint-disable-next-line @typescript-eslint/naming-convention
-declare const Terminal: { new(): import('xterm').Terminal };
+declare const Terminal: typeof import('xterm').Terminal;
 // eslint-disable-next-line @typescript-eslint/naming-convention
-declare const FitAddon: { FitAddon: { new(): import('xterm-addon-fit').FitAddon } };
+declare const FitAddon: { FitAddon: typeof import('xterm-addon-fit').FitAddon };
 
 declare const acquireVsCodeApi: any;
 
 declare const preloadData: any;
 
 (() => {
+    function getCSSVariable (name: string) {
+        return getComputedStyle(document.documentElement)
+            .getPropertyValue(name);
+    }
+
     const vscode = acquireVsCodeApi();
     vscode.setState(preloadData);
 
-    const terminal = new Terminal();
+    const terminal = new Terminal({
+        theme: {
+            foreground: getCSSVariable('--vscode-terminal-foreground'),
+            background: getCSSVariable('--vscode-panel-background'),
+
+            brightBlack: getCSSVariable('--vscode-terminal-ansiBrightBlack'),
+            brightBlue: getCSSVariable('--vscode-terminal-ansiBrightBlue'),
+            brightCyan: getCSSVariable('--vscode-terminal-ansiBrightCyan'),
+            brightGreen: getCSSVariable('--vscode-terminal-ansiBrightGreen'),
+            brightMagenta: getCSSVariable('--vscode-terminal-ansiBrightMagenta'),
+            brightRed: getCSSVariable('--vscode-terminal-ansiBrightRed'),
+            brightWhite: getCSSVariable('--vscode-terminal-ansiBrightWhite'),
+            brightYellow: getCSSVariable('--vscode-terminal-ansiBrightYellow'),
+
+            black: getCSSVariable('--vscode-terminal-ansiBlack'),
+            blue: getCSSVariable('--vscode-terminal-ansiBlue'),
+            cyan: getCSSVariable('--vscode-terminal-ansiCyan'),
+            green: getCSSVariable('--vscode-terminal-ansiGreen'),
+            magenta: getCSSVariable('-vscode-terminal-ansiMagenta'),
+            red: getCSSVariable('--vscode-terminal-ansiRed'),
+            white: getCSSVariable('--vscode-terminal-ansiWhite'),
+            yellow: getCSSVariable('--vscode-terminal-ansiYellow'),
+
+            selection: getCSSVariable('--vscode-terminal-selectionBackground')
+        },
+        fontSize: Number(getCSSVariable('--vscode-font-size').replace('px', '')),
+        fontWeight: getCSSVariable('--vscode-font-weight') as any,
+        fontFamily: getCSSVariable('--vscode-editor-font-family')
+    });
     const fitAddon = new FitAddon.FitAddon();
 
     terminal.loadAddon(fitAddon);
