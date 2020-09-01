@@ -160,9 +160,6 @@ export function activate(context: vscode.ExtensionContext) {
 
     class TerminalTabSerializer implements vscode.WebviewPanelSerializer {
         async deserializeWebviewPanel(panel: vscode.WebviewPanel, state: any) {
-            // `state` is the state persisted using `setState` inside the webview
-            console.log(`Got state: ${state}`);
-
             // eslint-disable-next-line eqeqeq
             if (state == null) {
                 console.warn('Panel restored without state eliminated');
