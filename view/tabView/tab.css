@@ -18,3 +18,7 @@ body {
     align-items: center;
     justify-content: center;
 }
+
+#terminal .xterm-viewport {
+    margin-right: -20px;
+}
