@@ -5,8 +5,12 @@ declare const FitAddon: { FitAddon: { new(): import('xterm-addon-fit').FitAddon 
 
 declare const acquireVsCodeApi: any;
 
+declare const preloadData: any;
+
 (() => {
     const vscode = acquireVsCodeApi();
+    vscode.setState(preloadData);
+
     const terminal = new Terminal();
     const fitAddon = new FitAddon.FitAddon();
 
@@ -14,6 +18,7 @@ declare const acquireVsCodeApi: any;
     terminal.open(document.getElementById('terminal')!);
 
     fitAddon.fit();
+
     window.addEventListener('resize', () => {
         fitAddon.fit();
     });

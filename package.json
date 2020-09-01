@@ -10,16 +10,12 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:terminaltab.helloWorld",
-		"onCommand:terminaltab.createTerminal"
+		"onCommand:terminaltab.createTerminal",
+		"onWebviewPanel:terminalTab"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
-			{
-				"command": "terminaltab.helloWorld",
-				"title": "Hello World"
-			},
 			{
 				"command": "terminaltab.createTerminal",
 				"title": "Launch a terminal tab"
