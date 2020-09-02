@@ -2,7 +2,7 @@
 	"name": "terminaltab",
 	"displayName": "TerminalTab",
 	"description": "A extension that allow to to place terminals anywhere",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"engines": {
 		"vscode": "^1.48.0"
 	},
@@ -59,8 +59,8 @@
 		"xterm-addon-unicode11": "^0.2.0"
 	},
 	"repository": {
-		"type" : "git",
-		"url" : "https://github.com/mmis1000/Vscode-terminal-tab.git"
+		"type": "git",
+		"url": "https://github.com/mmis1000/Vscode-terminal-tab.git"
 	},
 	"extensionKind": [
 		"workspace"
