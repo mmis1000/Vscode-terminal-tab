@@ -6,6 +6,7 @@
 	"engines": {
 		"vscode": "^1.48.0"
 	},
+	"publisher": "mmis1000-persional",
 	"categories": [
 		"Other"
 	],
