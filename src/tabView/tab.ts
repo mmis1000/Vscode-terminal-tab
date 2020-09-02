@@ -2,12 +2,16 @@
 declare const Terminal: typeof import('xterm').Terminal;
 // eslint-disable-next-line @typescript-eslint/naming-convention
 declare const FitAddon: { FitAddon: typeof import('xterm-addon-fit').FitAddon };
+// eslint-disable-next-line @typescript-eslint/naming-convention
+declare const SerializeAddon: { SerializeAddon: typeof import('xterm-addon-serialize').SerializeAddon };
+// eslint-disable-next-line @typescript-eslint/naming-convention
+declare const Unicode11Addon: { Unicode11Addon: typeof import('xterm-addon-unicode11').Unicode11Addon };
 
 declare const acquireVsCodeApi: any;
 
 declare const preloadData: any;
 
-(() => {
+(async () => {
     function getCSSVariable (name: string) {
         return getComputedStyle(document.documentElement)
             .getPropertyValue(name);
@@ -51,10 +55,27 @@ declare const preloadData: any;
         fontWeight: getCSSVariable('--vscode-editor-font-weight') as any,
         fontFamily: getCSSVariable('--vscode-editor-font-family')
     });
+
     const fitAddon = new FitAddon.FitAddon();
+    const serializeAddon = new SerializeAddon.SerializeAddon();
+    const unicode11Addon = new Unicode11Addon.Unicode11Addon();
 
     terminal.loadAddon(fitAddon);
+    terminal.loadAddon(serializeAddon);
+    terminal.loadAddon(unicode11Addon);
+    // activate the new version
+    terminal.unicode.activeVersion = '11';
+
     terminal.open(document.getElementById('terminal')!);
+
+    if (preloadData.history) {
+        await new Promise(resolve => {
+            terminal.write(
+                preloadData.history + `\r\n\x1b[49;90mSession Contents Restored on ${new Date()}\x1b[m\r\n`,
+                resolve
+            );
+        });
+    }
 
     fitAddon.fit();
 
@@ -62,11 +83,26 @@ declare const preloadData: any;
         fitAddon.fit();
     });
 
+    function saveHandler () {
+        vscode.setState({
+            ...preloadData,
+            history: serializeAddon.serialize()
+        });
+    }
+
+    let saveTimer: ReturnType<typeof setTimeout> = null!;
+
+    function scheduleSave () {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveHandler, 1000);
+    }
+
     window.addEventListener('message', evW => {
         const ev = evW.data;
 
         switch (ev.type) {
             case 'stdout': {
+                scheduleSave();
                 terminal.write(
                     ev.data.type === 'Buffer'
                         ? new Uint8Array(ev.data.data)

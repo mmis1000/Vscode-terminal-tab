@@ -46,6 +46,8 @@ export function activate(context: vscode.ExtensionContext) {
         const scripts = [
             getWebViewPathString('node_modules', 'xterm', 'lib', 'xterm.js'),
             getWebViewPathString('node_modules', 'xterm-addon-fit', 'lib', 'xterm-addon-fit.js'),
+            getWebViewPathString('node_modules', 'xterm-addon-serialize', 'lib', 'xterm-addon-serialize.js'),
+            getWebViewPathString('node_modules', 'xterm-addon-unicode11', 'lib', 'xterm-addon-unicode11.js'),
             getWebViewPathString('out', 'tabView', 'tab.js')
         ];
 
@@ -71,6 +73,8 @@ export function activate(context: vscode.ExtensionContext) {
             if (ev.exitCode !== 0) {
                 vscode.window.showWarningMessage(`Terminal exited with ${ev.exitCode} due to signal ${ev.signal}`);
             }
+
+            panel.dispose();
         });
 
         terminal.on('data', data => {
@@ -117,7 +121,11 @@ export function activate(context: vscode.ExtensionContext) {
                                 vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.env.HOME || '',
                                 ev.data.cols,
                                 ev.data.rows,
-                                process.env as any
+                                {
+                                    ...process.env as any,
+                                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                                    LANG: vscode.env.language.replace('-', '_') + '.UTF-8'
+                                }
                             );
 
                             con = res.terminal;
@@ -149,7 +157,11 @@ export function activate(context: vscode.ExtensionContext) {
 
             panel.webview.html = getWebviewHTML(panel, {
                 cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.env.HOME || '',
-                env: process.env
+                env: {
+                    ...process.env as any,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    LANG: vscode.env.language.replace('-', '_') + '.UTF-8'
+                }
             });
 
             panel.onDidDispose(() => {
@@ -170,6 +182,8 @@ export function activate(context: vscode.ExtensionContext) {
                 panel.dispose();
                 return;
             }
+
+            console.log(state);
 
             let con: import('node-pty').IPty | null = null;
             let exitHandler: null | import('node-pty').IDisposable = null;
