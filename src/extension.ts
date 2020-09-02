@@ -2,8 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as path from 'path';
-// import * as pty from 'node-pty';
-import * as os from 'os';
+import * as fs from 'fs';
 
 /**
  * Returns a node module installed with VSCode, or null if it fails.
@@ -90,8 +89,69 @@ export function activate(context: vscode.ExtensionContext) {
         };
     };
 
+    const initTerminal = (panel: vscode.WebviewPanel, cwd: string, env: Record<string, string>, state: any = null) => {
+        let con: import('node-pty').IPty | null = null;
+        let exitHandler: null | import('node-pty').IDisposable = null;
+        let disposed = false;
+
+        panel.webview.onDidReceiveMessage(
+            ev => {
+                switch (ev.type) {
+                    case 'ready': {
+                        // killed before the launch
+                        if (disposed) {
+                            return;
+                        }
+                        const res = spawnTerminal(
+                            panel,
+                            cwd,
+                            ev.data.cols,
+                            ev.data.rows,
+                            env
+                        );
+
+                        con = res.terminal;
+                        exitHandler = res.exitHandler;
+                        break;
+                    }
+                    case 'stdin': {
+                        if (con === null) {
+                            console.warn('terminal does not exist');
+                            return;
+                        }
+
+                        con.write(ev.data.type === 'Buffer' ? Buffer.from(ev.data.data) : ev.data);
+                    }
+                    case 'resize': {
+                        if (con === null) {
+                            console.warn('terminal does not exist');
+                            return;
+                        }
+
+                        con.resize(ev.data.cols, ev.data.rows);
+                    }
+                    default:
+                }
+            },
+            undefined,
+            context.subscriptions
+        );
+
+        panel.webview.html = getWebviewHTML(panel, state || {
+            cwd,
+            env
+        });
+
+        panel.onDidDispose(() => {
+            exitHandler?.dispose();
+            exitHandler = null;
+            disposed = true;
+            con?.kill();
+        });
+    };
+
     context.subscriptions.push(
-        vscode.commands.registerCommand('terminaltab.createTerminal', () => {
+        vscode.commands.registerCommand('terminaltab.createTerminal', async (fileUri) => {
             // Create and show a new webview
             const panel = vscode.window.createWebviewPanel(
                 'terminalTab', // Identifies the type of the webview. Used internally
@@ -104,75 +164,31 @@ export function activate(context: vscode.ExtensionContext) {
                 }
             );
 
-            let con: import('node-pty').IPty | null = null;
-            let exitHandler: null | import('node-pty').IDisposable = null;
-            let disposed = false;
+            let cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.env.HOME || '';
 
-            panel.webview.onDidReceiveMessage(
-                ev => {
-                    switch (ev.type) {
-                        case 'ready': {
-                            // killed before the launch
-                            if (disposed) {
-                                return;
-                            }
-                            const res = spawnTerminal(
-                                panel,
-                                vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.env.HOME || '',
-                                ev.data.cols,
-                                ev.data.rows,
-                                {
-                                    ...process.env as any,
-                                    // eslint-disable-next-line @typescript-eslint/naming-convention
-                                    LANG: vscode.env.language.replace('-', '_') + '.UTF-8'
-                                }
-                            );
+            if (fileUri instanceof vscode.Uri) {
+                const stat = await fs.promises.stat(fileUri.fsPath);
 
-                            con = res.terminal;
-                            exitHandler = res.exitHandler;
-                            break;
-                        }
-                        case 'stdin': {
-                            if (con === null) {
-                                console.warn('terminal does not exist');
-                                return;
-                            }
+                if (stat.isFile()) {
+                    cwd = path.dirname(fileUri.fsPath);
+                } else {
+                    cwd = fileUri.fsPath;
+                }
+            }
 
-                            con.write(ev.data.type === 'Buffer' ? Buffer.from(ev.data.data) : ev.data);
-                        }
-                        case 'resize': {
-                            if (con === null) {
-                                console.warn('terminal does not exist');
-                                return;
-                            }
-
-                            con.resize(ev.data.cols, ev.data.rows);
-                        }
-                        default:
-                    }
-                },
-                undefined,
-                context.subscriptions
-            );
-
-            panel.webview.html = getWebviewHTML(panel, {
-                cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.env.HOME || '',
-                env: {
+            initTerminal(
+                panel,
+                cwd,
+                {
                     ...process.env as any,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
-                    LANG: vscode.env.language.replace('-', '_') + '.UTF-8'
+                    LANG: vscode.env.language.replace('-', '_') + '.UTF-8',
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    COLORTERM: 'truecolor'
                 }
-            });
-
-            panel.onDidDispose(() => {
-                exitHandler?.dispose();
-                exitHandler = null;
-                disposed = true;
-                con?.kill();
-            });
+            );
         })
     );
-
 
     class TerminalTabSerializer implements vscode.WebviewPanelSerializer {
         async deserializeWebviewPanel(panel: vscode.WebviewPanel, state: any) {
@@ -183,63 +199,12 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
-            console.log(state);
-
-            let con: import('node-pty').IPty | null = null;
-            let exitHandler: null | import('node-pty').IDisposable = null;
-            let disposed = false;
-
-            panel.webview.onDidReceiveMessage(
-                ev => {
-                    switch (ev.type) {
-                        case 'ready': {
-                            // killed before the launch
-                            if (disposed) {
-                                return;
-                            }
-                            const res = spawnTerminal(
-                                panel,
-                                state.cwd,
-                                ev.data.cols,
-                                ev.data.rows,
-                                state.env
-                            );
-
-                            con = res.terminal;
-                            exitHandler = res.exitHandler;
-                            break;
-                        }
-                        case 'stdin': {
-                            if (con === null) {
-                                console.warn('terminal does not exist');
-                                return;
-                            }
-
-                            con.write(ev.data.type === 'Buffer' ? Buffer.from(ev.data.data) : ev.data);
-                        }
-                        case 'resize': {
-                            if (con === null) {
-                                console.warn('terminal does not exist');
-                                return;
-                            }
-
-                            con.resize(ev.data.cols, ev.data.rows);
-                        }
-                        default:
-                    }
-                },
-                undefined,
-                context.subscriptions
+            initTerminal(
+                panel,
+                state.cwd,
+                state.env,
+                state
             );
-
-            panel.webview.html = getWebviewHTML(panel, state);
-
-            panel.onDidDispose(() => {
-                exitHandler?.dispose();
-                exitHandler = null;
-                disposed = true;
-                con?.kill();
-            });
         }
     }
 

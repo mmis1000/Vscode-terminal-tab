@@ -18,9 +18,16 @@
 		"commands": [
 			{
 				"command": "terminaltab.createTerminal",
-				"title": "Launch a terminal tab"
+				"title": "Launch a terminal tab here"
 			}
-		]
+		],
+		"menus": {
+			"explorer/context": [
+				{
+					"command": "terminaltab.createTerminal"
+				}
+			]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
