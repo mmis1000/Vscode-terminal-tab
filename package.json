@@ -58,6 +58,10 @@
 		"xterm-addon-serialize": "^0.3.0",
 		"xterm-addon-unicode11": "^0.2.0"
 	},
+	"repository": {
+		"type" : "git",
+		"url" : "https://github.com/mmis1000/Vscode-terminal-tab.git"
+	},
 	"extensionKind": [
 		"workspace"
 	]
