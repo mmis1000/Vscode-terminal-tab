@@ -34,6 +34,15 @@ The tab looks more like a terminal that live in vscode by accident.
 
 ## Release Notes
 
+### 0.0.2
+
+Update description only
+
 ### 0.0.1
 
 Initial publish
+
+## See Also
+
+Github Issue: [Tabs for integrated terminal](https://github.com/microsoft/vscode/issues/10546)  
+Github Issue: [Retain terminal processes between window reloads](https://github.com/microsoft/vscode/issues/20013)
