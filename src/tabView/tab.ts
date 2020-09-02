@@ -23,7 +23,7 @@ declare const preloadData: any;
     const foregroundColor = getCSSVariable('--vscode-terminal-foreground');
     const backgroundColor = getCSSVariable('--vscode-terminal-background') || getCSSVariable('--vscode-panel-background');
 
-    const terminal = new Terminal({
+    const terminal = (window as any).terminal = new Terminal({
         theme: {
             foreground: foregroundColor,
             background: backgroundColor,
@@ -84,9 +84,23 @@ declare const preloadData: any;
     });
 
     function saveHandler () {
+        // FIXME: Giant hack here, remove after https://github.com/xtermjs/xterm.js/issues/3066 fixed
+        function fixUnicode (original: string) {
+            const unicodeService: import("xterm").IUnicodeVersionProvider = (terminal as any)._core.unicodeService;
+            return original.replace(/(.)\u001b\[(\d+)C/gu, (m, $1, $2) => {
+                if (unicodeService.wcwidth($1.codePointAt(0)!) === 2) {
+                    if (Number($2) - 1 === 0) {
+                        return $1;
+                    } else {
+                        return `${$1}\u001b\[${Number($2) - 1}C`;
+                    }
+                }
+                return m;
+            });
+        }
         vscode.setState({
             ...preloadData,
-            history: serializeAddon.serialize()
+            history: fixUnicode(serializeAddon.serialize())
         });
     }
 
