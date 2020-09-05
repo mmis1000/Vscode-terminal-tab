@@ -46,6 +46,10 @@ There is no formal way to use native module in native extension, so I abused int
 
 ## Release Notes
 
+### 0.0.3
+
+Update description only
+
 ### 0.0.2
 
 Update description only
