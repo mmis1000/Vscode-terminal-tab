@@ -20,6 +20,8 @@ declare const preloadData: any;
     const vscode = acquireVsCodeApi();
     vscode.setState(preloadData);
 
+    let currentState = JSON.parse(JSON.stringify(preloadData));
+
     const foregroundColor = getCSSVariable('--vscode-terminal-foreground');
     const backgroundColor = getCSSVariable('--vscode-terminal-background') || getCSSVariable('--vscode-panel-background');
 
@@ -98,10 +100,9 @@ declare const preloadData: any;
                 return m;
             });
         }
-        vscode.setState({
-            ...preloadData,
-            history: fixUnicode(serializeAddon.serialize())
-        });
+
+        currentState.history = fixUnicode(serializeAddon.serialize());
+        vscode.setState(currentState);
     }
 
     let saveTimer: ReturnType<typeof setTimeout> = null!;
@@ -151,5 +152,16 @@ declare const preloadData: any;
             cols: terminal.cols,
             rows: terminal.rows
         }
+    });
+
+    terminal.onTitleChange(title => {
+        currentState.title = title;
+        scheduleSave();
+        vscode.postMessage({
+            type: 'title',
+            data: {
+                title: title
+            }
+        });
     });
 })();

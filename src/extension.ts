@@ -54,13 +54,14 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     const spawnTerminal = (
+        shell: string,
         panel: vscode.WebviewPanel,
         cwd: string,
         cols: number,
         rows: number,
         env: Record<string, string>
     ) => {
-        let terminal = pty.spawn(vscode.env.shell, [], {
+        let terminal = pty.spawn(shell, [], {
             name: 'xterm-256color',
             cols,
             rows,
@@ -94,6 +95,16 @@ export function activate(context: vscode.ExtensionContext) {
         let exitHandler: null | import('node-pty').IDisposable = null;
         let disposed = false;
 
+        const shell = state?.shell ?? vscode.env.shell;
+
+        function setTitle(title: string) {
+            if (title.length > 20) {
+                panel.title = title.slice(0, 5) + '...' + title.slice(title.length - 15, title.length);
+            } else {
+                panel.title = title;
+            }
+        }
+
         panel.webview.onDidReceiveMessage(
             ev => {
                 switch (ev.type) {
@@ -103,6 +114,7 @@ export function activate(context: vscode.ExtensionContext) {
                             return;
                         }
                         const res = spawnTerminal(
+                            shell,
                             panel,
                             cwd,
                             ev.data.cols,
@@ -130,6 +142,9 @@ export function activate(context: vscode.ExtensionContext) {
 
                         con.resize(ev.data.cols, ev.data.rows);
                     }
+                    case 'title': {
+                        setTitle(ev.data.title);
+                    }
                     default:
                 }
             },
@@ -138,6 +153,7 @@ export function activate(context: vscode.ExtensionContext) {
         );
 
         panel.webview.html = getWebviewHTML(panel, state || {
+            shell,
             cwd,
             env
         });
@@ -148,14 +164,18 @@ export function activate(context: vscode.ExtensionContext) {
             disposed = true;
             con?.kill();
         });
+
+        if (state?.title) {
+            setTitle(state?.title);
+        }
     };
 
     context.subscriptions.push(
         vscode.commands.registerCommand('terminaltab.createTerminal', async (fileUri) => {
             // Create and show a new webview
             const panel = vscode.window.createWebviewPanel(
-                'terminalTab', // Identifies the type of the webview. Used internally
-                'Terminal', // Title of the panel displayed to the user
+                'terminalTab.terminal', // Identifies the type of the webview. Used internally
+                'New terminal', // Title of the panel displayed to the user
                 vscode.ViewColumn.One,
                 {
                     // Enable scripts in the webview
@@ -166,7 +186,7 @@ export function activate(context: vscode.ExtensionContext) {
 
             let cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.env.HOME || '';
 
-            if (fileUri instanceof vscode.Uri) {
+            if (fileUri instanceof vscode.Uri && fileUri.scheme === 'file') {
                 const stat = await fs.promises.stat(fileUri.fsPath);
 
                 if (stat.isFile()) {
@@ -209,6 +229,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     vscode.window.registerWebviewPanelSerializer('terminalTab', new TerminalTabSerializer());
+    vscode.window.registerWebviewPanelSerializer('terminalTab.terminal', new TerminalTabSerializer());
 }
 
 // this method is called when your extension is deactivated
