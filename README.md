@@ -39,12 +39,16 @@ No
 
 ## Known Issues
 
-Integration with the vscode is lacking because there is no api for that.  
-The tab looks more like a terminal that live in vscode by accident.
-
-There is no formal way to use native module in native extension, so I abused internals of vscode.
+1. Integration with the vscode is lacking because there is no api for that.  
+    The tab looks more like a terminal that live in vscode by accident.
+2. There is no formal way to use native module in native extension, so I abused internals of vscode.
+3. There is no formal way to use production icon in webview tab title, so I copied it directly from codicons.
 
 ## Release Notes
+
+### 0.0.5
+
+Feat: Add icon to the tab title.
 
 ### 0.0.4
 
@@ -75,3 +79,8 @@ Initial publish
 
 - [Vscode: Allow Extensions to use native modules shipped with vscode](https://github.com/microsoft/vscode/issues/84439)
 - [Vscode: Support Platform Specific Extensions](https://github.com/microsoft/vscode/issues/23251)
+- [Vscode: Allow ThemeIcon in WebviewPanel.iconPath](https://github.com/microsoft/vscode/issues/90616)
+
+## Note
+
+The icons are from [codicons](https://github.com/microsoft/vscode-codicons).
