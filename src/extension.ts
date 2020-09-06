@@ -61,6 +61,15 @@ export function activate(context: vscode.ExtensionContext) {
         rows: number,
         env: Record<string, string>
     ) => {
+        panel.iconPath = {
+            dark: vscode.Uri.file(
+                path.join(context.extensionPath, 'view', 'tabView', 'codicons-terminal-light.svg')
+            ),
+            light: vscode.Uri.file(
+                path.join(context.extensionPath, 'view', 'tabView', 'codicons-terminal-dark.svg')
+            )
+        };
+
         let terminal = pty.spawn(shell, [], {
             name: 'xterm-256color',
             cols,
