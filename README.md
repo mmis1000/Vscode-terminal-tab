@@ -48,8 +48,8 @@ There is no formal way to use native module in native extension, so I abused int
 
 ### 0.0.4
 
-Fix: Save/restore current shell at tab creation that correspond to the terminal tab.
-Feat: Forward shell title.
+Fix: Save/restore current shell at tab creation that correspond to the terminal tab.  
+Feat: Forward shell title.  
 Feat: Add a short cut on editor title to open new terminal.
 
 ### 0.0.3
