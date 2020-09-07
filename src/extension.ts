@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-
+import * as os from 'os';
 /**
  * Returns a node module installed with VSCode, or null if it fails.
  */
@@ -17,6 +17,16 @@ function getCoreNodeModule(moduleName: string) {
     } catch (err) { }
 
     return null;
+}
+
+function getDefaultShellArgs() {
+    const nodePlatform = os.platform();
+    const type =
+        nodePlatform === 'win32' ? 'windows'
+            : nodePlatform === 'darwin' ? 'osx'
+                : 'linux';
+
+    return vscode.workspace.getConfiguration('terminal').get(`integrated.shellArgs.${type}`) as string[];
 }
 
 const pty = getCoreNodeModule('node-pty') as typeof import('node-pty');
@@ -55,6 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const spawnTerminal = (
         shell: string,
+        args: string[],
         panel: vscode.WebviewPanel,
         cwd: string,
         cols: number,
@@ -70,7 +81,7 @@ export function activate(context: vscode.ExtensionContext) {
             )
         };
 
-        let terminal = pty.spawn(shell, [], {
+        let terminal = pty.spawn(shell, args, {
             name: 'xterm-256color',
             cols,
             rows,
@@ -105,6 +116,7 @@ export function activate(context: vscode.ExtensionContext) {
         let disposed = false;
 
         const shell = state?.shell ?? vscode.env.shell;
+        const args = state?.args || getDefaultShellArgs();
 
         function setTitle(title: string) {
             if (title.length > 20) {
@@ -124,6 +136,7 @@ export function activate(context: vscode.ExtensionContext) {
                         }
                         const res = spawnTerminal(
                             shell,
+                            args,
                             panel,
                             cwd,
                             ev.data.cols,
@@ -164,6 +177,7 @@ export function activate(context: vscode.ExtensionContext) {
         panel.webview.html = getWebviewHTML(panel, state || {
             shell,
             cwd,
+            args,
             env
         });
 
