@@ -48,6 +48,10 @@ No
 
 ### 0.0.5
 
+Fix: Apply default shell args from `terminal.integrated.shellArgs.${platform}`
+
+### 0.0.5
+
 Feat: Add icon to the tab title.
 
 ### 0.0.4
