@@ -28,6 +28,19 @@ It is also experiment of
 
 1. auto recover tab (its cwd and env) on load workspace
 2. auto recover terminal content after recover the tag (just like iterm 2)
+3. persistent session with tmux (idea stole form from cloud9 ide)
+
+## Commands
+
+1. Launch a terminal tab here
+   1. Terminal session gone on vscode closed
+   2. However terminal content was restore on vscode restart.
+   3. Shortcuts
+      1. Also available as shortcut on top right of editor column
+      2. Also available ad file menu shortcut
+2. Launch a tmux baked terminal tab here
+   1. Terminal session is not destroyed unless you close the tab (even close editor does not matter).
+   2. Session can be listed with `tmux -L vscode-terminal-tab list-sessions`
 
 ## Requirements
 
@@ -35,7 +48,9 @@ You need to have access to shell env. (or you can't open terminal)
 
 ## Extension Settings
 
-No
+No.
+
+All setting are read directly from integrated terminal setting.
 
 ## Known Issues
 
@@ -46,7 +61,11 @@ No
 
 ## Release Notes
 
-### 0.0.5
+### 0.0.7
+
+Feat: Add a tmux baked persistent terminal.
+
+### 0.0.6
 
 Fix: Apply default shell args from `terminal.integrated.shellArgs.${platform}`
 
