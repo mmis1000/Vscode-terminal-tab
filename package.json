@@ -12,6 +12,7 @@
     ],
     "activationEvents": [
         "onCommand:terminaltab.createTerminal",
+        "onCommand:terminaltab.createTerminalPersistent",
         "onWebviewPanel:terminalTab",
         "onWebviewPanel:terminalTab.terminal"
     ],
@@ -21,6 +22,11 @@
             {
                 "command": "terminaltab.createTerminal",
                 "title": "Launch a terminal tab here",
+                "icon": "$(terminal)"
+            },
+            {
+                "command": "terminaltab.createTerminalPersistent",
+                "title": "Launch a tmux baked terminal tab here",
                 "icon": "$(terminal)"
             }
         ],

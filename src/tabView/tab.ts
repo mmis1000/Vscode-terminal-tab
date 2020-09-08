@@ -9,19 +9,58 @@ declare const Unicode11Addon: { Unicode11Addon: typeof import('xterm-addon-unico
 
 declare const acquireVsCodeApi: any;
 
-declare const preloadData: any;
+declare const preloadData: import('../interface').WebviewState;
 
 (async () => {
-    function getCSSVariable (name: string) {
+    function getCSSVariable(name: string) {
         return getComputedStyle(document.documentElement)
             .getPropertyValue(name);
     }
 
     const vscode = acquireVsCodeApi();
-    vscode.setState(preloadData);
 
-    let currentState = JSON.parse(JSON.stringify(preloadData));
+    function saveHandler() {
+        // FIXME: Giant hack here, remove after https://github.com/xtermjs/xterm.js/issues/3066 fixed
+        function fixUnicode(original: string) {
+            const unicodeService: import("xterm").IUnicodeVersionProvider = (terminal as any)._core.unicodeService;
+            return original.replace(/(.)\u001b\[(\d+)C/gu, (m, $1, $2) => {
+                if (unicodeService.wcwidth($1.codePointAt(0)!) === 2) {
+                    if (Number($2) - 1 === 0) {
+                        return $1;
+                    } else {
+                        return `${$1}\u001b\[${Number($2) - 1}C`;
+                    }
+                }
+                return m;
+            });
+        }
 
+        currentState.history = fixUnicode(serializeAddon.serialize());
+        vscode.setState(currentState);
+    }
+
+    let saveTimer: ReturnType<typeof setTimeout> = null!;
+
+    function scheduleSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveHandler, 1000);
+    }
+
+
+    let currentState: import('../interface').WebviewState = JSON.parse(JSON.stringify(preloadData));
+
+    function updateStateThrottled (fn: (state: import('../interface').WebviewState) => void) {
+        fn(currentState);
+        scheduleSave();
+    }
+
+    //#region webview-id
+    const webviewId = preloadData.id || Math.random().toString(16).slice(2);
+    currentState.id = webviewId;
+    vscode.setState(currentState);
+    //#endregion  webview-id
+
+    //#region terminal-setup
     const foregroundColor = getCSSVariable('--vscode-terminal-foreground');
     const backgroundColor = getCSSVariable('--vscode-terminal-background') || getCSSVariable('--vscode-panel-background');
 
@@ -69,8 +108,10 @@ declare const preloadData: any;
     terminal.unicode.activeVersion = '11';
 
     terminal.open(document.getElementById('terminal')!);
+    //#endregion terminal-setup
 
-    if (preloadData.history) {
+    // ignore history write back for persistent terminal because the host is responsible for that
+    if (!currentState.persistent && preloadData.history) {
         await new Promise(resolve => {
             terminal.write(
                 preloadData.history + `\r\n\x1b[49;90mSession Contents Restored on ${new Date()}\x1b[m\r\n`,
@@ -79,50 +120,66 @@ declare const preloadData: any;
         });
     }
 
-    fitAddon.fit();
+    function updateSize() {
+        fitAddon.fit();
+
+        updateStateThrottled(state => {
+            state.size = {
+                cols: terminal.cols,
+                rows: terminal.rows
+            };
+        });
+    }
+
+    if (currentState.visible) {
+        updateSize();
+        console.log('fitting size');
+        console.log('new dimension', terminal.cols, terminal.rows);
+    } else if (currentState.size) {
+        console.log('old dimension', currentState.size.cols, currentState.size.rows);
+        terminal.resize(
+            currentState.size.cols,
+            currentState.size.rows
+        );
+    } else {
+        console.log('hold until dimension is known');
+    }
 
     window.addEventListener('resize', () => {
-        fitAddon.fit();
-    });
-
-    function saveHandler () {
-        // FIXME: Giant hack here, remove after https://github.com/xtermjs/xterm.js/issues/3066 fixed
-        function fixUnicode (original: string) {
-            const unicodeService: import("xterm").IUnicodeVersionProvider = (terminal as any)._core.unicodeService;
-            return original.replace(/(.)\u001b\[(\d+)C/gu, (m, $1, $2) => {
-                if (unicodeService.wcwidth($1.codePointAt(0)!) === 2) {
-                    if (Number($2) - 1 === 0) {
-                        return $1;
-                    } else {
-                        return `${$1}\u001b\[${Number($2) - 1}C`;
-                    }
-                }
-                return m;
-            });
+        if (currentState.visible) {
+            updateSize();
+            console.log('fitting size');
+            console.log('new dimension', terminal.cols, terminal.rows);
+        } else {
+            console.log('ignore size change because terminal is invisible');
         }
-
-        currentState.history = fixUnicode(serializeAddon.serialize());
-        vscode.setState(currentState);
-    }
-
-    let saveTimer: ReturnType<typeof setTimeout> = null!;
-
-    function scheduleSave () {
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(saveHandler, 1000);
-    }
+    });
 
     window.addEventListener('message', evW => {
         const ev = evW.data;
 
         switch (ev.type) {
             case 'stdout': {
-                scheduleSave();
+                // ignore history save for persistent terminal because the host is responsible for that
+                if (!currentState.persistent) {
+                    scheduleSave();
+                }
+
                 terminal.write(
                     ev.data.type === 'Buffer'
                         ? new Uint8Array(ev.data.data)
                         : ev.data);
 
+                break;
+            }
+            case 'viewStateChange': {
+                updateStateThrottled(state => {
+                    state.visible = ev.data.visible;
+                });
+
+                if (ev.data.visible) {
+                    fitAddon.fit();
+                }
                 break;
             }
             default:
@@ -146,17 +203,22 @@ declare const preloadData: any;
         });
     });
 
+    const readyData: import('../interface').WebviewReadyPayload = {
+        cols: currentState?.size?.cols ?? terminal.cols,
+        rows: currentState?.size?.rows ?? terminal.rows,
+        webviewId
+    };
+
     vscode.postMessage({
         type: 'ready',
-        data: {
-            cols: terminal.cols,
-            rows: terminal.rows
-        }
+        data: readyData
     });
 
     terminal.onTitleChange(title => {
-        currentState.title = title;
-        scheduleSave();
+        updateStateThrottled(state => {
+            state.title = title;
+        });
+
         vscode.postMessage({
             type: 'title',
             data: {
