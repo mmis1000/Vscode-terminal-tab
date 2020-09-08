@@ -44,7 +44,8 @@ It is also experiment of
 
 ## Requirements
 
-You need to have access to shell env. (or you can't open terminal)
+1. Access to shell env. (or you can't open terminal)
+2. Tmux installed if you want to use tmux baked terminal tab.
 
 ## Extension Settings
 
