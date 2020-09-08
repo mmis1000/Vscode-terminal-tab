@@ -37,7 +37,7 @@ It is also experiment of
    2. However terminal content was restore on vscode restart.
    3. Shortcuts
       1. Also available as shortcut on top right of editor column
-      2. Also available ad file menu shortcut
+      2. Also available as file menu shortcut
 2. Launch a tmux baked terminal tab here
    1. Terminal session is not destroyed unless you close the tab (even close editor does not matter).
    2. Session can be listed with `tmux -L vscode-terminal-tab list-sessions`
