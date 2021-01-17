@@ -62,6 +62,10 @@ All setting are read directly from integrated terminal setting.
 
 ## Release Notes
 
+### 0.1.1
+
+Fix: Fix locale detection again
+
 ### 0.1.0
 
 Feat: Support `terminal.integrated.env.*`
