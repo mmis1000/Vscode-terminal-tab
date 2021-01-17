@@ -22,6 +22,80 @@ function getDefaultShellArgs() {
     return vscode.workspace.getConfiguration('terminal').get(`integrated.shellArgs.${type}`) as string[];
 }
 
+let localeCache: string | null = null;
+
+async function getLocale() {
+    const nodePlatform = os.platform();
+    const type =
+        nodePlatform === 'win32' ? 'windows'
+            : nodePlatform === 'darwin' ? 'osx'
+                : 'linux';
+
+    const defaultLocale: string = vscode.env.language.replace('-', '_') + '.UTF-8';
+    const defaultEnglishLocale: string = 'en_US.UTF-8';
+
+    if (type !== 'windows') {
+        if (localeCache !== null) {
+            vscodeConsole.appendLine('Using cached locale: ' + localeCache);
+            return localeCache;
+        }
+
+        // try to infer locale
+        try {
+            const locales = await new Promise<string[]>((resolve, reject) => {
+                child_process.execFile('locale', ['-a'], (err, res) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(res.trim().split(/\r?\n/g).filter(it => it));
+                    }
+                });
+            });
+
+            // try to match against the locale
+            const localesFormatted = locales.map(l => {
+                const formatted = l.replace(/\.utf-?8/i, '.UTF-8');
+                const isUTF8 = /\.utf-?8/i.test(l);
+                return {
+                    original: l,
+                    isUTF8,
+                    formatted
+                };
+            });
+
+            let localeHit: string | null = null;
+
+            const hitExact = localesFormatted.find(it => it.formatted === defaultLocale);
+            const hitEnglish = localesFormatted.find(it => it.formatted === defaultEnglishLocale);
+            const hitUTF8 = localesFormatted.find(it => it.isUTF8);
+            const firstLocale = localesFormatted[0];
+
+            if (hitExact !== undefined) {
+                localeHit = hitExact.original;
+            } else if (hitEnglish !== undefined) {
+                localeHit = hitEnglish.original;
+            } else if (hitUTF8 !== undefined) {
+                localeHit = hitUTF8.original;
+            } else if (firstLocale !== undefined) {
+                localeHit = localesFormatted[0].original;
+            } else {
+                vscode.window.showWarningMessage(`Unable to determine locale, a default one generated from ide language is used`);
+                localeHit = defaultLocale;
+            }
+
+            vscodeConsole.appendLine('Locale detected: ' + localeHit);
+            localeCache = localeHit;
+            return localeHit;
+        } catch (e) {
+            vscode.window.showWarningMessage(`Unable to determine locale, a default one generated from ide language is used`);
+            localeCache = defaultLocale;
+            return defaultLocale;
+        }
+    }
+
+    return defaultLocale;
+}
+
 function escapeCommand(args: string[]) {
     return args.map(arg => {
         return "'" + arg.replace(/'/g, `'"'"'`) + "'";
@@ -76,7 +150,7 @@ export class TerminalManager {
                     {
                         ...process.env as any,
                         // eslint-disable-next-line @typescript-eslint/naming-convention
-                        LANG: vscode.env.language.replace('-', '_') + '.UTF-8',
+                        LANG: await getLocale(),
                         // eslint-disable-next-line @typescript-eslint/naming-convention
                         COLORTERM: 'truecolor'
                     },
@@ -119,7 +193,7 @@ export class TerminalManager {
                     {
                         ...process.env as any,
                         // eslint-disable-next-line @typescript-eslint/naming-convention
-                        LANG: vscode.env.language.replace('-', '_') + '.UTF-8',
+                        LANG: await getLocale(),
                         // eslint-disable-next-line @typescript-eslint/naming-convention
                         COLORTERM: 'truecolor'
                     },
