@@ -68,7 +68,7 @@ Fix: Fix locale detection again
 
 ### 0.1.0
 
-Feat: Support `terminal.integrated.env.*`
+Feat: Support `terminal.integrated.env.*`  
 Fix: Fix locale detection
 
 ### 0.0.7
