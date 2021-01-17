@@ -58,7 +58,10 @@ async function getLocale() {
             : nodePlatform === 'darwin' ? 'osx'
                 : 'linux';
 
-    const defaultLocale: string = vscode.env.language.replace('-', '_') + '.UTF-8';
+    const [lang, country] = vscode.env.language.split('-');
+    const language = country === undefined ? lang : lang + '_' + country.toUpperCase();
+    const defaultLocale: string = language + '.UTF-8';
+
     const defaultEnglishLocale: string = 'en_US.UTF-8';
 
     if (type !== 'windows') {
@@ -92,8 +95,8 @@ async function getLocale() {
 
             let localeHit: string | null = null;
 
-            const hitExact = localesFormatted.find(it => it.formatted === defaultLocale);
-            const hitEnglish = localesFormatted.find(it => it.formatted === defaultEnglishLocale);
+            const hitExact = localesFormatted.find(it => it.formatted.toLowerCase() === defaultLocale.toLowerCase());
+            const hitEnglish = localesFormatted.find(it => it.formatted.toLowerCase() === defaultEnglishLocale.toLowerCase());
             const hitUTF8 = localesFormatted.find(it => it.isUTF8);
             const firstLocale = localesFormatted[0];
 
@@ -178,7 +181,7 @@ export class TerminalManager {
                         {
                             ...process.env as any,
                             // eslint-disable-next-line @typescript-eslint/naming-convention
-                            LANG: await getLocale(),
+                            LANG: process.env.LANG || await getLocale(),
                             // eslint-disable-next-line @typescript-eslint/naming-convention
                             COLORTERM: 'truecolor'
                         },
@@ -224,7 +227,7 @@ export class TerminalManager {
                         {
                             ...process.env as any,
                             // eslint-disable-next-line @typescript-eslint/naming-convention
-                            LANG: await getLocale(),
+                            LANG: process.env.LANG || await getLocale(),
                             // eslint-disable-next-line @typescript-eslint/naming-convention
                             COLORTERM: 'truecolor'
                         },
