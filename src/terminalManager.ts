@@ -22,6 +22,33 @@ function getDefaultShellArgs() {
     return vscode.workspace.getConfiguration('terminal').get(`integrated.shellArgs.${type}`) as string[];
 }
 
+function getDefaultShellEnvs() {
+    const nodePlatform = os.platform();
+    const type =
+        nodePlatform === 'win32' ? 'windows'
+            : nodePlatform === 'darwin' ? 'osx'
+                : 'linux';
+
+    const defaultEnv = vscode.workspace.getConfiguration('terminal').get(`integrated.env.${type}`) as Record<string, string | null> | undefined;
+
+    return defaultEnv || {};
+}
+
+function overrideShellEnv(original: Record<string, string>, patch: Record<string, string | null>) {
+    const clone = { ...original };
+
+    for (let key of Object.keys(patch)) {
+        if (typeof patch[key] === 'string') {
+            clone[key] = patch[key]!;
+        }
+        if (patch[key] === null) {
+            delete clone[key];
+        }
+    }
+
+    return clone;
+}
+
 let localeCache: string | null = null;
 
 async function getLocale() {
@@ -147,13 +174,16 @@ export class TerminalManager {
                     cwd,
                     getDefaultShell(),
                     getDefaultShellArgs(),
-                    {
-                        ...process.env as any,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        LANG: await getLocale(),
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        COLORTERM: 'truecolor'
-                    },
+                    overrideShellEnv(
+                        {
+                            ...process.env as any,
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
+                            LANG: await getLocale(),
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
+                            COLORTERM: 'truecolor'
+                        },
+                        getDefaultShellEnvs()
+                    ),
                     null
                 );
             })
@@ -190,13 +220,16 @@ export class TerminalManager {
                     cwd,
                     getDefaultShell(),
                     getDefaultShellArgs(),
-                    {
-                        ...process.env as any,
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        LANG: await getLocale(),
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        COLORTERM: 'truecolor'
-                    },
+                    overrideShellEnv(
+                        {
+                            ...process.env as any,
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
+                            LANG: await getLocale(),
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
+                            COLORTERM: 'truecolor'
+                        },
+                        getDefaultShellEnvs()
+                    ),
                     null,
                     true
                 );
