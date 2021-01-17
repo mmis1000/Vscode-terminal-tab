@@ -62,6 +62,11 @@ All setting are read directly from integrated terminal setting.
 
 ## Release Notes
 
+### 0.1.0
+
+Feat: Support `terminal.integrated.env.*`
+Fix: Fix locale detection
+
 ### 0.0.7
 
 Feat: Add a tmux baked persistent terminal.
