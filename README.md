@@ -62,6 +62,14 @@ All setting are read directly from integrated terminal setting.
 
 ## Release Notes
 
+### 0.1.3
+
+Fix issue #7: color theme not update on config change
+
+### 0.1.2
+
+Skip ahead
+
 ### 0.1.1
 
 Fix: Fix locale detection again
