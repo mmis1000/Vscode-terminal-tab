@@ -233,4 +233,10 @@ export class Terminal {
 
         this.con = terminal;
     }
+
+    refreshTheme() {
+        this.panel.webview.postMessage({
+            type: 'themeChange'
+        });
+    }
 }

@@ -69,7 +69,7 @@
     "dependencies": {
         "xterm": "^4.8.1",
         "xterm-addon-fit": "^0.4.0",
-        "xterm-addon-serialize": "^0.3.0",
+        "xterm-addon-serialize": "^0.4.0",
         "xterm-addon-unicode11": "^0.2.0"
     },
     "repository": {

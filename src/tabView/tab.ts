@@ -20,22 +20,7 @@ declare const preloadData: import('../interface').WebviewState;
     const vscode = acquireVsCodeApi();
 
     function saveHandler() {
-        // FIXME: Giant hack here, remove after https://github.com/xtermjs/xterm.js/issues/3066 fixed
-        function fixUnicode(original: string) {
-            const unicodeService: import("xterm").IUnicodeVersionProvider = (terminal as any)._core.unicodeService;
-            return original.replace(/(.)\u001b\[(\d+)C/gu, (m, $1, $2) => {
-                if (unicodeService.wcwidth($1.codePointAt(0)!) === 2) {
-                    if (Number($2) - 1 === 0) {
-                        return $1;
-                    } else {
-                        return `${$1}\u001b\[${Number($2) - 1}C`;
-                    }
-                }
-                return m;
-            });
-        }
-
-        currentState.history = fixUnicode(serializeAddon.serialize());
+        currentState.history = serializeAddon.serialize();
         vscode.setState(currentState);
     }
 
@@ -61,11 +46,12 @@ declare const preloadData: import('../interface').WebviewState;
     //#endregion  webview-id
 
     //#region terminal-setup
-    const foregroundColor = getCSSVariable('--vscode-terminal-foreground');
-    const backgroundColor = getCSSVariable('--vscode-terminal-background') || getCSSVariable('--vscode-panel-background');
 
-    const terminal = (window as any).terminal = new Terminal({
-        theme: {
+    const getTheme = () => {
+        const foregroundColor = getCSSVariable('--vscode-terminal-foreground');
+        const backgroundColor = getCSSVariable('--vscode-terminal-background') || getCSSVariable('--vscode-panel-background');
+
+        return  {
             foreground: foregroundColor,
             background: backgroundColor,
 
@@ -91,11 +77,19 @@ declare const preloadData: import('../interface').WebviewState;
 
             cursor: getCSSVariable('--vscode-terminalCursor-foreground') || foregroundColor,
             cursorAccent: getCSSVariable('--vscode-terminalCursor-foreground') || backgroundColor
-        },
-        fontSize: Number(getCSSVariable('--vscode-editor-font-size').replace('px', '')),
-        fontWeight: getCSSVariable('--vscode-editor-font-weight') as any,
-        fontFamily: getCSSVariable('--vscode-editor-font-family')
-    });
+        };
+    };
+
+    const getConfig = () => {
+        return {
+            theme: getTheme(),
+            fontSize: Number(getCSSVariable('--vscode-editor-font-size').replace('px', '')),
+            fontWeight: getCSSVariable('--vscode-editor-font-weight') as any,
+            fontFamily: getCSSVariable('--vscode-editor-font-family')
+        };
+    };
+
+    const terminal = (window as any).terminal = new Terminal(getConfig());
 
     const fitAddon = new FitAddon.FitAddon();
     const serializeAddon = new SerializeAddon.SerializeAddon();
@@ -106,21 +100,42 @@ declare const preloadData: import('../interface').WebviewState;
     terminal.loadAddon(unicode11Addon);
     // activate the new version
     terminal.unicode.activeVersion = '11';
-
-    terminal.open(document.getElementById('terminal')!);
     //#endregion terminal-setup
 
     // ignore history write back for persistent terminal because the host is responsible for that
     if (!currentState.persistent && preloadData.history) {
+        if (preloadData.size) {
+            terminal.resize(preloadData.size.cols, preloadData.size.rows);
+        }
+
+        // This didn't work because it will break cursor position if it is in normal screen
+        // const RMCUP = '\u001b[?1049l';
+        const RESET_STYLE = '\u001b[0m';
+
         await new Promise(resolve => {
             terminal.write(
-                preloadData.history + `\r\n\x1b[49;90mSession Contents Restored on ${new Date()}\x1b[m\r\n`,
+                preloadData.history 
+                // + RMCUP 
+                + RESET_STYLE
+                + `\r\n\x1b[49;90mSession Contents Restored on ${new Date()}\x1b[m\r\n`,
                 resolve
             );
         });
     }
 
+    terminal.open(document.getElementById('terminal')!);
+
+
+    const hasWindowSize = () => {
+        return window.innerWidth > 0 && window.innerHeight > 0;
+    };
+
     function updateSize() {
+        if (!hasWindowSize()) {
+            // for some reason, the windows size is incorrect
+            return;
+        }
+
         fitAddon.fit();
 
         updateStateThrottled(state => {
@@ -179,6 +194,18 @@ declare const preloadData: import('../interface').WebviewState;
 
                 if (ev.data.visible) {
                     fitAddon.fit();
+                }
+                break;
+            }
+            case 'themeChange': {
+                const newConfig = getConfig();
+
+                for (let key of Object.keys(newConfig)) {
+                    terminal.setOption(key, (newConfig as any)[key]);
+                }
+
+                if (currentState.visible) {
+                    updateSize();
                 }
                 break;
             }

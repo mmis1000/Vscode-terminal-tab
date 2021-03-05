@@ -143,6 +143,9 @@ export class TerminalManager {
 
     private terminals = new Map<string, Terminal>();
 
+    private _themeEvent = new vscode.EventEmitter<void>();
+    private onTheme = this._themeEvent.event;
+
     constructor(private context: vscode.ExtensionContext) { }
 
     listen() {
@@ -239,6 +242,32 @@ export class TerminalManager {
             })
         );
 
+        this.context.subscriptions.push(
+            vscode.workspace.onDidChangeConfiguration(ev => {
+                if (
+                    ev.affectsConfiguration('workbench.colorCustomizations') ||
+                    ev.affectsConfiguration('workbench.colorTheme') ||
+                    ev.affectsConfiguration('workbench.preferredDarkColorTheme') ||
+                    ev.affectsConfiguration('workbench.preferredHighContrastColorTheme') ||
+                    ev.affectsConfiguration('workbench.preferredLightColorTheme') ||
+                    ev.affectsConfiguration('editor.fontFamily') ||
+                    ev.affectsConfiguration('terminal.integrated.fontFamily') ||
+                    ev.affectsConfiguration('editor.fontWeight') ||
+                    ev.affectsConfiguration('terminal.integrated.fontWeight') ||
+                    ev.affectsConfiguration('editor.fontSize') ||
+                    ev.affectsConfiguration('terminal.integrated.fontSize')
+                ) {
+                    this._themeEvent.fire();
+                }
+            })
+        );
+
+        this.context.subscriptions.push(
+            vscode.window.onDidChangeActiveColorTheme(ev => {
+                this._themeEvent.fire();
+            })
+        );
+
         class TerminalTabSerializer implements vscode.WebviewPanelSerializer {
             constructor(private _terminalManager: TerminalManager) { }
             async deserializeWebviewPanel(panel: vscode.WebviewPanel, state: WebviewState | null) {
@@ -275,6 +304,10 @@ export class TerminalManager {
         persistent = false
     ) {
         let webviewId: string | null = null;
+
+        const ev = this.onTheme(() => {
+            terminal.refreshTheme();
+        });
 
         const terminal = new Terminal(
             this.context,
@@ -329,6 +362,8 @@ export class TerminalManager {
         });
 
         terminal.onDispose(() => {
+            ev.dispose();
+
             for (let [k, v] of this.terminals.entries()) {
                 if (terminal === v) {
                     this.terminals.delete(k);
