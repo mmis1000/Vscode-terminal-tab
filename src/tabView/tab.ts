@@ -108,15 +108,20 @@ declare const preloadData: import('../interface').WebviewState;
             terminal.resize(preloadData.size.cols, preloadData.size.rows);
         }
 
-        // This didn't work because it will break cursor position if it is in normal screen
-        // const RMCUP = '\u001b[?1049l';
+        const RMCUP = '\u001b[?1049l';
         const RESET_STYLE = '\u001b[0m';
+
+        let appends = RESET_STYLE;
+
+        // Do this only when we are in alternative screen
+        if (preloadData.history.indexOf('\u001b[?1049h') >= 0) {
+            appends += RMCUP;
+        }
 
         await new Promise(resolve => {
             terminal.write(
                 preloadData.history 
-                // + RMCUP 
-                + RESET_STYLE
+                + appends
                 + `\r\n\x1b[49;90mSession Contents Restored on ${new Date()}\x1b[m\r\n`,
                 resolve
             );
