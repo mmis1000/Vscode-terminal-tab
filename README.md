@@ -62,6 +62,11 @@ All setting are read directly from integrated terminal setting.
 
 ## Release Notes
 
+### 0.1.4
+
+Dependency bump
+Fix corrupted history when in alternative screen.
+
 ### 0.1.3
 
 Fix issue #7: color theme not update on config change
