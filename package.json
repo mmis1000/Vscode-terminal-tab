@@ -2,7 +2,7 @@
     "name": "terminaltab",
     "displayName": "TerminalTab",
     "description": "A extension that allow to to place terminals anywhere",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "engines": {
         "vscode": "^1.48.0"
     },
