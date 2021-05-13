@@ -64,6 +64,10 @@ All setting are read directly from integrated terminal setting.
 
 ### 0.1.4
 
+Fix unintended scrollbar of tab under certain condition
+
+### 0.1.4
+
 Dependency bump
 Fix corrupted history when in alternative screen.
 
