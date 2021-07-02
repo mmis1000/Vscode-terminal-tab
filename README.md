@@ -7,6 +7,13 @@
     <img src="https://img.shields.io/visual-studio-marketplace/v/mmis1000-personal.terminaltab?color=green&label=VS%20Marketplace&style=flat-square" />
 </a>
 
+## Update
+
+The vscode supports terminal tab in nightly now, and it will soon be on the stable.  
+See https://github.com/microsoft/vscode/issues/10546#issuecomment-868845212 
+
+This extension's job is done. 👏👏👏👏👏
+
 ## Warning
 ```txt
 This repository abused non-public API in the vscode and will break at any time in the future.
